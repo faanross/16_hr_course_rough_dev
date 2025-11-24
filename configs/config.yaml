@@ -1,0 +1,14 @@
+# shared values
+server_port: "8443"
+protocol: "https"
+
+
+# values for agent
+server_ip: "127.0.0.1"
+timing:
+  delay: "5s"
+  jitter: 50
+
+# values for server
+tls_key: "./certs/server.key"
+tls_cert: "./certs/server.crt"
