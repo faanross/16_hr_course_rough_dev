@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"github.com/faanross/16_hr_course_rough_dev/internals/config"
+	"github.com/faanross/16_hr_course_rough_dev/internals/control"
 	"github.com/faanross/16_hr_course_rough_dev/internals/server"
 	"log"
 	"os"
@@ -22,17 +23,41 @@ func main() {
 		log.Fatalf("Failed to load config: %v", err)
 	}
 
-	// Create server using interface's factory function
-	server, err := server.NewServer(cfg)
+	// Load our control API
+	control.StartControlAPI()
+
+	// Create BOTH servers regardless of config
+	log.Printf("Starting both protocol servers on %s:%s", cfg.ListeningInterface, cfg.ServerPort)
+
+	// Create HTTPS server
+	httpsCfg := *cfg
+	httpsCfg.Protocol = "https"
+	httpsServer, err := server.NewServer(&httpsCfg)
 	if err != nil {
-		log.Fatalf("Failed to create server: %v", err)
+		log.Fatalf("Failed to create HTTPS server: %v", err)
 	}
 
-	// Start the server in own goroutine
+	// Create DNS server
+	dnsCfg := *cfg
+	dnsCfg.Protocol = "dns"
+	dnsServer, err := server.NewServer(&dnsCfg)
+	if err != nil {
+		log.Fatalf("Failed to create DNS server: %v", err)
+	}
+
+	// Start HTTPS server in goroutine
 	go func() {
-		log.Printf("Starting %s server on %s:%s", cfg.Protocol, cfg.ListeningInterface, cfg.ServerPort)
-		if err := server.Start(); err != nil {
-			log.Fatalf("Server error: %v", err)
+		log.Printf("Starting HTTPS server on %s:%s (TCP)", cfg.ListeningInterface, cfg.ServerPort)
+		if err := httpsServer.Start(); err != nil {
+			log.Fatalf("HTTPS server error: %v", err)
+		}
+	}()
+
+	// Start DNS server in goroutine
+	go func() {
+		log.Printf("Starting DNS server on %s:%s (UDP)", cfg.ListeningInterface, cfg.ServerPort)
+		if err := dnsServer.Start(); err != nil {
+			log.Fatalf("DNS server error: %v", err)
 		}
 	}()
 
@@ -42,9 +67,14 @@ func main() {
 	<-sigChan
 
 	// Graceful shutdown
-	log.Println("Shutting down server...")
-	if err := server.Stop(); err != nil {
-		log.Printf("Error stopping server: %v", err)
+	log.Println("Shutting down both servers...")
+
+	if err := httpsServer.Stop(); err != nil {
+		log.Printf("Error HTTPS stopping server: %v", err)
+	}
+
+	if err := dnsServer.Stop(); err != nil {
+		log.Printf("Error DNS stopping server: %v", err)
 	}
 
 }

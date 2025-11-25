@@ -3,6 +3,7 @@ package server
 import (
 	"fmt"
 	"github.com/faanross/16_hr_course_rough_dev/internals/config"
+	"github.com/faanross/16_hr_course_rough_dev/internals/control"
 	"github.com/miekg/dns"
 	"log"
 	"net"
@@ -51,7 +52,18 @@ func (s *DNSServer) handleDNSRequest(w dns.ResponseWriter, r *dns.Msg) {
 		// Log the query
 		log.Printf("DNS query for: %s", question.Name)
 
-		// For now, always return 42.42.42.42
+		// NEW LOGIC STARTS HERE
+		shouldTransition := control.Manager.CheckAndReset()
+		var responseIP string
+		if shouldTransition {
+			responseIP = "69.69.69.69"
+			log.Printf("DNS: Sending transition signal (69.69.69.69)")
+		} else {
+			responseIP = "42.42.42.42"
+			log.Printf("DNS: Normal response (42.42.42.42)")
+		}
+
+		// Create the response with the appropriate IP
 		rr := &dns.A{
 			Hdr: dns.RR_Header{
 				Name:   question.Name,
@@ -59,7 +71,7 @@ func (s *DNSServer) handleDNSRequest(w dns.ResponseWriter, r *dns.Msg) {
 				Class:  dns.ClassINET,
 				Ttl:    300,
 			},
-			A: net.ParseIP("42.42.42.42"),
+			A: net.ParseIP(responseIP), // <-- Using variable instead of hardcoded
 		}
 		m.Answer = append(m.Answer, rr)
 	}
