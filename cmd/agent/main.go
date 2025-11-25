@@ -1,9 +1,13 @@
 package main
 
 import (
+	"context"
 	"flag"
+	"github.com/faanross/16_hr_course_rough_dev/internals/agent"
 	"github.com/faanross/16_hr_course_rough_dev/internals/config"
 	"log"
+	"os"
+	"os/signal"
 )
 
 const pathToYAML = "./configs/config.yaml"
@@ -14,16 +18,37 @@ func main() {
 	flag.Parse()
 
 	// Load configuration
-	agentCfg, err := config.LoadAgentConfig(*configPath)
+	cfg, err := config.LoadAgentConfig(*configPath)
 	if err != nil {
 		log.Fatalf("Failed to load config: %v", err)
 	}
 
-	log.Printf("Loaded configuration:\n")
-	log.Printf("-> Server IP: %s\n", agentCfg.ServerIP)
-	log.Printf("-> Server Port: %s\n", agentCfg.ServerPort)
-	log.Printf("-> Delay: %v\n", agentCfg.Timing.Delay)
-	log.Printf("-> Jitter: %d%%\n", agentCfg.Timing.Jitter)
-	log.Printf("-> Starting Protocol: %s\n", agentCfg.Protocol)
+	// Call our factory function
+	comm, err := agent.NewAgent(cfg)
+	if err != nil {
+		log.Fatalf("Failed to create communicator: %v", err)
+	}
 
+	// ALL THIS DOWN HERE IS THE NEW CODE
+	// Create context for cancellation
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	//Start run loop in goroutine
+	go func() {
+		log.Printf("Starting %s client run loop", cfg.Protocol)
+		log.Printf("Delay: %v, Jitter: %d%%", cfg.Timing.Delay, cfg.Timing.Jitter)
+
+		if err := agent.RunLoop(ctx, comm, cfg); err != nil {
+			log.Printf("Run loop error: %v", err)
+		}
+	}()
+
+	// Wait for interrupt signal
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt)
+	<-sigChan
+
+	log.Println("Shutting down client...")
+	cancel() // This will cause the run loop to exit
 }

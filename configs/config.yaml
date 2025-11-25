@@ -10,5 +10,6 @@ timing:
   jitter: 50
 
 # values for server
+listening_interface: "127.0.0.1"
 tls_key: "./certs/server.key"
 tls_cert: "./certs/server.crt"
