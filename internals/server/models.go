@@ -11,7 +11,7 @@ func NewServer(cfg *config.ServerConfig) (Server, error) {
 	case "https":
 		return NewHTTPSServer(cfg), nil
 	case "dns":
-		return nil, fmt.Errorf("DNS not yet implemented")
+		return NewDNSServer(cfg), nil
 	default:
 		return nil, fmt.Errorf("unsupported protocol: %v", cfg.Protocol)
 	}

@@ -1,6 +1,6 @@
 # shared values
 server_port: "8443"
-protocol: "https"
+protocol: "dns"
 
 
 # values for agent

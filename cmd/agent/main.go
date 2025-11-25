@@ -34,15 +34,17 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	//Start run loop in goroutine
-	go func() {
-		log.Printf("Starting %s client run loop", cfg.Protocol)
-		log.Printf("Delay: %v, Jitter: %d%%", cfg.Timing.Delay, cfg.Timing.Jitter)
+	comm.Send(ctx)
 
-		if err := agent.RunLoop(ctx, comm, cfg); err != nil {
-			log.Printf("Run loop error: %v", err)
-		}
-	}()
+	//Start run loop in goroutine
+	//go func() {
+	//	log.Printf("Starting %s client run loop", cfg.Protocol)
+	//	log.Printf("Delay: %v, Jitter: %d%%", cfg.Timing.Delay, cfg.Timing.Jitter)
+	//
+	//	if err := agent.RunLoop(ctx, comm, cfg); err != nil {
+	//		log.Printf("Run loop error: %v", err)
+	//	}
+	//}()
 
 	// Wait for interrupt signal
 	sigChan := make(chan os.Signal, 1)

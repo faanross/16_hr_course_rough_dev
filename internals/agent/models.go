@@ -12,7 +12,7 @@ func NewAgent(cfg *config.AgentConfig) (Agent, error) {
 	case "https":
 		return NewHTTPSAgent(cfg.ServerIP, cfg.ServerPort), nil
 	case "dns":
-		return nil, fmt.Errorf("DNS not yet implemented")
+		return NewDNSAgent(cfg.ServerIP, cfg.ServerPort), nil
 	default:
 		return nil, fmt.Errorf("unsupported protocol: %v", cfg.Protocol)
 	}
