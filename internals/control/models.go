@@ -13,3 +13,8 @@ type ShellcodeArgsClient struct {
 	FilePath   string `json:"file_path"`
 	ExportName string `json:"export_name"`
 }
+
+type ShellcodeArgsAgent struct {
+	ShellcodeBase64 string `json:"shellcode_base64"`
+	ExportName      string `json:"export_name"`
+}

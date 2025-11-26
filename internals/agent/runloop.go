@@ -49,6 +49,7 @@ func RunLoop(ctx context.Context, comm Agent, cfg *config.AgentConfig) error {
 		}
 
 		response, err := currentAgent.Send(ctx)
+
 		if err != nil {
 			log.Printf("Error sending request: %v", err)
 			// Don't exit - just sleep and try again

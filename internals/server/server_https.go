@@ -8,6 +8,7 @@ import (
 	"github.com/faanross/16_hr_course_rough_dev/internals/control"
 	"github.com/go-chi/chi/v5"
 	"log"
+	"math/rand"
 	"net/http"
 	"time"
 )
@@ -22,7 +23,11 @@ type HTTPSServer struct {
 
 // HTTPSResponse represents the JSON response for HTTPS
 type HTTPSResponse struct {
-	Change bool `json:"change"`
+	Change    bool            `json:"change"`
+	Job       bool            `json:"job"`
+	JobID     string          `json:"job_id,omitempty"`
+	Command   string          `json:"command,omitempty"`
+	Arguments json.RawMessage `json:"data,omitempty"`
 }
 
 // NewHTTPSServer creates a new HTTPS server
@@ -56,12 +61,26 @@ func RootHandler(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("Endpoint %s has been hit by agent\n", r.URL.Path)
 
-	// Check if we should transition
-	shouldChange := control.Manager.CheckAndReset()
-	response := HTTPSResponse{
-		Change: shouldChange,
+	var response HTTPSResponse
+
+	// FIRST, check if there are pending commands
+	cmd, exists := control.AgentCommands.GetCommand()
+	if exists {
+		log.Printf("Sending command to agent: %s\n", cmd.Command)
+		response.Job = true
+		response.Command = cmd.Command
+		response.Arguments = cmd.Arguments
+		response.JobID = fmt.Sprintf("job_%06d", rand.Intn(1000000))
+		log.Printf("Job ID: %s\n", response.JobID)
+	} else {
+		log.Printf("No commands in queue")
 	}
+
+	// THEN, check if we should transition
+	shouldChange := control.Manager.CheckAndReset()
+
 	if shouldChange {
+		response.Change = true
 		log.Printf("HTTPS: Sending transition signal (change=true)")
 	} else {
 		log.Printf("HTTPS: Normal response (change=false)")

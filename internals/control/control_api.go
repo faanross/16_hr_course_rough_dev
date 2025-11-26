@@ -110,6 +110,23 @@ func commandHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Process arguments (e.g., load file and convert to base64)
+	processedArgs, err := cmdConfig.Processor(cmdClient.Arguments)
+	if err != nil {
+		var commandInvalid = fmt.Sprintf("ERROR: Processing failed for '%s': %v", cmdClient.Command, err)
+		log.Printf(commandInvalid)
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(commandInvalid)
+		return
+	}
+
+	// Update command with processed arguments
+	cmdClient.Arguments = processedArgs
+	log.Printf("Processed command arguments: %s", cmdClient.Command)
+
+	// Queue the validated and processed command
+	AgentCommands.addCommand(cmdClient)
+
 	// Confirm on the client side command was received
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(commandReceived)

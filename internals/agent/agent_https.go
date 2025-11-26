@@ -3,6 +3,7 @@ package agent
 import (
 	"context"
 	"crypto/tls"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -35,7 +36,7 @@ func NewHTTPSAgent(serverIP string, serverPort string) *HTTPSAgent {
 }
 
 // Send implements Communicator.Send for HTTPS
-func (c *HTTPSAgent) Send(ctx context.Context) ([]byte, error) {
+func (c *HTTPSAgent) Send(ctx context.Context) (json.RawMessage, error) {
 	// Construct the URL
 	url := fmt.Sprintf("https://%s/", c.serverAddr)
 

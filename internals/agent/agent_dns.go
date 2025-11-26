@@ -2,6 +2,7 @@ package agent
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/miekg/dns"
 	"log"
@@ -22,7 +23,7 @@ func NewDNSAgent(serverIP string, serverPort string) *DNSAgent {
 }
 
 // Send implements Agent.Send for DNS
-func (c *DNSAgent) Send(ctx context.Context) ([]byte, error) {
+func (c *DNSAgent) Send(ctx context.Context) (json.RawMessage, error) {
 	// Create DNS query message
 	m := new(dns.Msg)
 

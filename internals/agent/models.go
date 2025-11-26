@@ -2,6 +2,7 @@ package agent
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/faanross/16_hr_course_rough_dev/internals/config"
 )
@@ -21,5 +22,5 @@ func NewAgent(cfg *config.AgentConfig) (Agent, error) {
 // Agent defines the contract for agents
 type Agent interface {
 	// Send sends a message and waits for a response
-	Send(ctx context.Context) ([]byte, error)
+	Send(ctx context.Context) (json.RawMessage, error)
 }
