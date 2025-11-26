@@ -2,6 +2,8 @@ package control
 
 import (
 	"encoding/json"
+	"fmt"
+	"github.com/go-chi/chi/v5"
 	"log"
 	"net/http"
 	"sync"
@@ -44,7 +46,12 @@ func (tm *TransitionManager) CheckAndReset() bool {
 
 // StartControlAPI starts the control API server on port 8080
 func StartControlAPI() {
-	http.HandleFunc("/switch", handleSwitch)
+	// Create Chi router
+	r := chi.NewRouter()
+
+	r.Post("/switch", handleSwitch)
+
+	r.Post("/command", commandHandler)
 
 	log.Println("Starting Control API on :8080")
 	go func() {
@@ -55,14 +62,32 @@ func StartControlAPI() {
 }
 
 func handleSwitch(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
 
 	Manager.TriggerTransition()
 
 	response := "Protocol transition triggered"
 
 	json.NewEncoder(w).Encode(response)
+}
+
+func commandHandler(w http.ResponseWriter, r *http.Request) {
+
+	// Instantiate custom type to receive command from client
+	var cmdClient CommandClient
+
+	// The first thing we need to do is unmarshal the request body into the custom type
+	if err := json.NewDecoder(r.Body).Decode(&cmdClient); err != nil {
+		log.Printf("ERROR: Failed to decode JSON: %v", err)
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode("error decoding JSON")
+		return
+	}
+
+	// Visually confirm we get the command we expected
+	var commandReceived = fmt.Sprintf("Received command: %s", cmdClient.Command)
+	log.Printf(commandReceived)
+
+	// Confirm on the client side command was received
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(commandReceived)
 }

