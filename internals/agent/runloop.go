@@ -57,6 +57,20 @@ func RunLoop(ctx context.Context, comm Agent, cfg *config.AgentConfig) error {
 			continue // Skip to next iteration
 		}
 
+		// Check if there is a job (in case of HTTPS)
+		if currentProtocol == "https" {
+			var httpsResp server.HTTPSResponse
+			if err := json.Unmarshal(response, &httpsResp); err != nil {
+				log.Printf("Error unmarshaling HTTPS response: %v", err)
+			} else {
+				if httpsResp.Job {
+					log.Printf("Job received from Server\n-> Command: %s\n-> JobID: %s", httpsResp.Command, httpsResp.JobID)
+				} else {
+					log.Printf("No job from Server")
+				}
+			}
+		}
+
 		// Check if this is a transition signal
 		if detectTransition(currentProtocol, response) {
 			log.Printf("TRANSITION SIGNAL DETECTED! Switching protocols...")
@@ -90,8 +104,12 @@ func RunLoop(ctx context.Context, comm Agent, cfg *config.AgentConfig) error {
 				json.Unmarshal(response, &httpsResp)
 				log.Printf("Received response: change=%v", httpsResp.Change)
 			case "dns":
-				ipAddr := string(response)
-				log.Printf("Received response: IP=%v", ipAddr)
+				// DNS response is now JSON with "ip" field
+				var dnsResp struct {
+					IP string `json:"ip"`
+				}
+				json.Unmarshal(response, &dnsResp)
+				log.Printf("Received response: IP=%v", dnsResp.IP)
 			}
 		}
 
@@ -111,7 +129,7 @@ func RunLoop(ctx context.Context, comm Agent, cfg *config.AgentConfig) error {
 }
 
 // detectTransition checks if the response indicates we should switch protocols
-func detectTransition(protocol string, response []byte) bool {
+func detectTransition(protocol string, response json.RawMessage) bool {
 	switch protocol {
 	case "https":
 		var httpsResp server.HTTPSResponse
@@ -121,8 +139,14 @@ func detectTransition(protocol string, response []byte) bool {
 		return httpsResp.Change
 
 	case "dns":
-		ipAddr := string(response)
-		return ipAddr == "69.69.69.69"
+		// DNS response is now JSON with "ip" field
+		var dnsResp struct {
+			IP string `json:"ip"`
+		}
+		if err := json.Unmarshal(response, &dnsResp); err != nil {
+			return false
+		}
+		return dnsResp.IP == "69.69.69.69"
 	}
 
 	return false

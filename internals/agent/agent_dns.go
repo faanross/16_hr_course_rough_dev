@@ -46,10 +46,16 @@ func (c *DNSAgent) Send(ctx context.Context) (json.RawMessage, error) {
 	// Extract the first A record
 	for _, ans := range r.Answer {
 		if a, ok := ans.(*dns.A); ok {
-			// Return the IP address as string
+			// Return the IP address in JSON format
 			ipStr := a.A.String()
 			log.Printf("Received DNS response: %s -> %s", domain, ipStr)
-			return []byte(ipStr), nil
+
+			response := map[string]string{"ip": ipStr}
+			jsonData, err := json.Marshal(response)
+			if err != nil {
+				return nil, fmt.Errorf("failed to marshal response: %w", err)
+			}
+			return json.RawMessage(jsonData), nil
 		}
 	}
 

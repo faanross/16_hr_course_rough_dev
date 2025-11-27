@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"github.com/faanross/16_hr_course_rough_dev/internals/server"
 	"io"
 	"net/http"
 )
@@ -65,6 +66,17 @@ func (c *HTTPSAgent) Send(ctx context.Context) (json.RawMessage, error) {
 		return nil, fmt.Errorf("reading response: %w", err)
 	}
 
-	// Return the raw JSON as message data
-	return body, nil
+	// Unmarshal into HTTPSResponse to validate structure
+	var httpsResp server.HTTPSResponse
+	if err := json.Unmarshal(body, &httpsResp); err != nil {
+		return nil, fmt.Errorf("unmarshaling response: %w", err)
+	}
+
+	// Marshal back to json.RawMessage
+	jsonData, err := json.Marshal(httpsResp)
+	if err != nil {
+		return nil, fmt.Errorf("marshaling response: %w", err)
+	}
+
+	return json.RawMessage(jsonData), nil
 }
