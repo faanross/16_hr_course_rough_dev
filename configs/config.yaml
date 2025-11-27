@@ -4,12 +4,12 @@ protocol: "https"
 
 
 # values for agent
-server_ip: "127.0.0.1"
+server_ip: "192.168.2.11"
 timing:
   delay: "5s"
   jitter: 50
 
 # values for server
-listening_interface: "127.0.0.1"
+listening_interface: "0.0.0.0"
 tls_key: "./certs/server.key"
 tls_cert: "./certs/server.crt"
