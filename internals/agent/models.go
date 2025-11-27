@@ -32,8 +32,3 @@ type AgentTaskResult struct {
 	CommandResult json.RawMessage `json:"command_result,omitempty"`
 	Error         error           `json:"error,omitempty"`
 }
-
-// ShellcodeResult represents the result of shellcode execution
-type ShellcodeResult struct {
-	Message string `json:"message"`
-}

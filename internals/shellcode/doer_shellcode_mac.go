@@ -4,7 +4,7 @@ package shellcode
 
 import (
 	"fmt"
-	"github.com/faanross/16_hr_course_rough_dev/internals/agent"
+	"github.com/faanross/16_hr_course_rough_dev/internals/models"
 )
 
 // macShellcode implements the CommandShellcode interface for Darwin/MacOS
@@ -16,10 +16,10 @@ func New() CommandShellcode {
 }
 
 // DoShellcode is the stub implementation for macOS
-func (ms *macShellcode) DoShellcode(dllBytes []byte, exportName string) (agent.ShellcodeResult, error) {
+func (ms *macShellcode) DoShellcode(dllBytes []byte, exportName string) (models.ShellcodeResult, error) {
 	fmt.Println("|❗ SHELLCODE DOER MACOS| This feature has not yet been implemented for MacOS.")
 
-	result := agent.ShellcodeResult{
+	result := models.ShellcodeResult{
 		Message: "FAILURE: Not implemented on macOS",
 	}
 	return result, nil
