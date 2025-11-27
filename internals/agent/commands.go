@@ -12,7 +12,7 @@ type OrchestratorFunc func(agent *HTTPSAgent, job *server.HTTPSResponse) AgentTa
 
 // registerCommands registers all available command orchestrators
 func registerCommands(agent *HTTPSAgent) {
-	// agent.commandOrchestrators["shellcode"] = (*HTTPSAgent).orchestrateShellcode
+	agent.commandOrchestrators["shellcode"] = (*HTTPSAgent).orchestrateShellcode
 	// Register other commands here in the future
 }
 
