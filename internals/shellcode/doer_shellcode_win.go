@@ -131,7 +131,7 @@ func New() CommandShellcode {
 
 // DoShellcode loads and runs the given DLL bytes in the current process.
 func (rl *windowsShellcode) DoShellcode(
-	dllBytes []byte,   // DLL content as byte slice
+	dllBytes []byte, // DLL content as byte slice
 	exportName string, // Name of the function to call
 ) (models.ShellcodeResult, error) {
 
