@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/faanross/16_hr_course_rough_dev/internals/config"
 	"github.com/faanross/16_hr_course_rough_dev/internals/control"
+	"github.com/faanross/16_hr_course_rough_dev/internals/models"
 	"github.com/go-chi/chi/v5"
 	"log"
 	"math/rand"
@@ -46,6 +47,9 @@ func (s *HTTPSServer) Start() error {
 
 	// Define our GET endpoint
 	r.Get("/", RootHandler)
+
+	// Define our POST endpoint for results
+	r.Post("/results", ResultHandler) // NEW
 
 	// Create the HTTP server
 	s.server = &http.Server{
@@ -96,6 +100,36 @@ func RootHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+}
+
+// ResultHandler receives and displays the result from the Agent
+func ResultHandler(w http.ResponseWriter, r *http.Request) {
+	log.Printf("Endpoint %s has been hit by agent\n", r.URL.Path)
+
+	var result models.AgentTaskResult
+
+	// Decode the incoming result
+	if err := json.NewDecoder(r.Body).Decode(&result); err != nil {
+		log.Printf("ERROR: Failed to decode JSON: %v", err)
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode("error decoding JSON")
+		return
+	}
+
+	// Unmarshal the CommandResult to get the actual message string
+	var messageStr string
+	if len(result.CommandResult) > 0 {
+		if err := json.Unmarshal(result.CommandResult, &messageStr); err != nil {
+			log.Printf("ERROR: Failed to unmarshal CommandResult: %v", err)
+			messageStr = string(result.CommandResult) // Fallback to raw bytes as string
+		}
+	}
+
+	if !result.Success {
+		log.Printf("Job (ID: %s) has failed\nMessage: %s\nError: %v", result.JobID, messageStr, result.Error)
+	} else {
+		log.Printf("Job (ID: %s) has succeeded\nMessage: %s", result.JobID, messageStr)
+	}
 }
 
 // Stop implements Server.Stop for HTTPS

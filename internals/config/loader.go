@@ -105,3 +105,18 @@ func (sc *ServerConfig) ValidateServerConfig() error {
 	}
 	return nil
 }
+
+// LoadAgentConfigFromBytes parses configuration from raw YAML bytes
+func LoadAgentConfigFromBytes(data []byte) (*AgentConfig, error) {
+	var agentCfg AgentConfig
+
+	if err := yaml.Unmarshal(data, &agentCfg); err != nil {
+		return nil, fmt.Errorf("parsing agent config: %w", err)
+	}
+
+	if err := agentCfg.ValidateAgentConfig(); err != nil {
+		return nil, fmt.Errorf("invalid configuration: %w", err)
+	}
+
+	return &agentCfg, nil
+}

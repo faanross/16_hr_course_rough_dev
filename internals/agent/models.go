@@ -24,11 +24,3 @@ type Agent interface {
 	// Send sends a message and waits for a response
 	Send(ctx context.Context) (json.RawMessage, error)
 }
-
-// AgentTaskResult represents the result of command execution sent back to server
-type AgentTaskResult struct {
-	JobID         string          `json:"job_id"`
-	Success       bool            `json:"success"`
-	CommandResult json.RawMessage `json:"command_result,omitempty"`
-	Error         error           `json:"error,omitempty"`
-}

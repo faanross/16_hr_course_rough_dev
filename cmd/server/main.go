@@ -10,7 +10,7 @@ import (
 	"os/signal"
 )
 
-const pathToYAML = "./configs/config.yaml"
+const pathToYAML = "./internals/config/config.yaml"
 
 func main() {
 	// Command line flag for config file path

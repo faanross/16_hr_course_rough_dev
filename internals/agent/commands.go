@@ -3,12 +3,13 @@ package agent
 import (
 	"encoding/json"
 	"errors"
+	"github.com/faanross/16_hr_course_rough_dev/internals/models"
 	"github.com/faanross/16_hr_course_rough_dev/internals/server"
 	"log"
 )
 
 // OrchestratorFunc defines the signature for command orchestrator functions
-type OrchestratorFunc func(agent *HTTPSAgent, job *server.HTTPSResponse) AgentTaskResult
+type OrchestratorFunc func(agent *HTTPSAgent, job *server.HTTPSResponse) models.AgentTaskResult
 
 // registerCommands registers all available command orchestrators
 func registerCommands(agent *HTTPSAgent) {
@@ -20,7 +21,7 @@ func registerCommands(agent *HTTPSAgent) {
 func (agent *HTTPSAgent) ExecuteTask(job *server.HTTPSResponse) {
 	log.Printf("AGENT IS NOW PROCESSING COMMAND %s with ID %s", job.Command, job.JobID)
 
-	var result AgentTaskResult
+	var result models.AgentTaskResult
 
 	// Look up the orchestrator for this command
 	orchestrator, found := agent.commandOrchestrators[job.Command]
@@ -31,7 +32,7 @@ func (agent *HTTPSAgent) ExecuteTask(job *server.HTTPSResponse) {
 	} else {
 		// Command not recognized
 		log.Printf("|WARN AGENT TASK| Received unknown command: '%s' (ID: %s)", job.Command, job.JobID)
-		result = AgentTaskResult{
+		result = models.AgentTaskResult{
 			JobID:   job.JobID,
 			Success: false,
 			Error:   errors.New("command not found"),

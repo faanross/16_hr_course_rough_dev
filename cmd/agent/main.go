@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"flag"
 	"github.com/faanross/16_hr_course_rough_dev/internals/agent"
 	"github.com/faanross/16_hr_course_rough_dev/internals/config"
 	"log"
@@ -10,15 +9,10 @@ import (
 	"os/signal"
 )
 
-const pathToYAML = "./configs/config.yaml"
-
 func main() {
-	// Command line flag for config file path
-	configPath := flag.String("config", pathToYAML, "path to configuration file")
-	flag.Parse()
 
-	// Load configuration
-	cfg, err := config.LoadAgentConfig(*configPath)
+	// Load configuration from embedded bytes
+	cfg, err := config.LoadAgentConfigFromBytes(config.EmbeddedAgentConfig)
 	if err != nil {
 		log.Fatalf("Failed to load config: %v", err)
 	}
